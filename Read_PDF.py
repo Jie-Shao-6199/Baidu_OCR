@@ -57,75 +57,7 @@ def read_pdf(page_text):
     # temp_str = re.sub(" +", " ", temp_str).strip()
     last_str = ''
     last_list = []
-    # print(temp_str)
-    # for str_num in range(len(temp_str)):
-    #
-    #     if temp_str[str_num] == ' ':
-    #
-    #         if str_num != 0 and str_num + 1 < len(temp_str) and \
-    #                 (is_chinese(temp_str[str_num - 1]) or has_symbol(temp_str[str_num - 1])) and \
-    #                 (is_chinese(temp_str[str_num + 1]) or has_symbol(temp_str[str_num + 1])):
-    #             pass
-    #         else:
-    #             last_str += temp_str[str_num]
-    #
-    #     elif temp_str[str_num] == '\n' and temp_str[str_num - 1] != '名':
-    #
-    #         if str_num != 0 and str_num + 10 < len(temp_str):
-    #
-    #             if is_chinese(temp_str[str_num - 1]) or has_symbol(temp_str[str_num - 1]):
-    #
-    #                 if (is_chinese(temp_str[str_num + 1]) or has_symbol(temp_str[str_num + 1])) and '类:' not in temp_str[str_num + 1: str_num + 10]:
-    #                     pass
-    #
-    #                 elif '年' in temp_str[str_num + 1: str_num + 10]:
-    #                     last_str += ' '
-    #
-    #                 else:
-    #                     last_str += temp_str[str_num]
-    #             else:
-    #                 last_str += temp_str[str_num]
-    #         elif str_num == 0:
-    #             pass
-    #         elif str_num + 1 < len(temp_str):
-    #             if is_chinese(temp_str[str_num - 1]) or has_symbol(temp_str[str_num - 1]):
-    #                 if (is_chinese(temp_str[str_num + 1]) or has_symbol(temp_str[str_num + 1])) and '类:' not in temp_str[str_num + 1:]:
-    #                     pass
-    #
-    #                 elif '年' in temp_str[str_num + 1:]:
-    #                     last_str += ' '
-    #
-    #                 else:
-    #                     last_str += temp_str[str_num]
-    #             else:
-    #                 last_str += temp_str[str_num]
-    #         else:
-    #             last_str += temp_str[str_num]
-    #     else:
-    #         last_str += temp_str[str_num]
-    #
-    # temp_text = re.split("\n", last_str)
-    # last_list = []
-    # for txt in temp_text:
-    #     temp_list = []
-    #     temp_li = re.split("[\u3000 ]", txt)
-    #     num = 0
-    #     while num < len(temp_li):
-    #
-    #         if temp_li[num] == '':
-    #
-    #             pass
-    #
-    #         else:
-    #
-    #             temp_list.append(temp_li[num])
-    #
-    #         num += 1
-    #
-    #     last_list.append(temp_list)
-    #
-    # # print(last_list)  # 看看每一行分的合不合理
-    # return last_list
+
     temp_list = re.split("\n", temp_str)
     for li in temp_list:
         if len(li) > 0:
