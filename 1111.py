@@ -1,18 +1,15 @@
 import requests
 import json
 
-API_KEY = "jGF4ZN10RT7zCYFxinSzBRH8"
-SECRET_KEY = "DqK3WZG5Xpr1hGTbU78U6zoFW8E8RibX"
+API_KEY = "GXnDWlpUxWtUBl3ogrxD3lcR"
+SECRET_KEY = "UuF2m3VL0ciaTtqnpoPFcUgKHDmZhWLH"
 
 
 def main():
-    url = "https://aip.baidubce.com/rpc/2.0/aasr/v1/create?access_token=" + get_access_token()
+    url = "https://aip.baidubce.com/rpc/2.0/nlp/v2/dnnlm_cn?charset=UTF-8&access_token=" + get_access_token()
 
     payload = json.dumps({
-        "speech_url": "https://sj-111021112.bj.bcebos.com/236999.m4a?authorization=bce-auth-v1/8ad975eb84614721a3f714b9a80d5eb2/2023-04-10T02%3A25%3A21Z/300/host/19eed825a4a362f7e3b023f49bd88eba4eb4a787095d05850d9b22009fa5432b",
-        "format": "pcm",
-        "pid": 80001,
-        "rate": 16000
+        "text": "以上专业除有说明外，其他专业学制：4年；学费：4200元/学年；住宿费：待定；办学地点：第一学年北校区，第二至四学年樱花"
     })
     headers = {
         'Content-Type': 'application/json',

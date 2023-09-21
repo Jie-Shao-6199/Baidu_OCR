@@ -1,10 +1,12 @@
 """
 被分成两页的，OCR识别程序
+适用于：吉林，山东，辽宁，河北，江苏
 """
 import base64
 import json
 import math
 import os
+import re
 import urllib
 from time import sleep
 
@@ -15,11 +17,14 @@ import numpy as np
 import pandas as pd
 import requests
 
-# API_KEY = "qWKwd5NQI3fxRu0f64MGGWYa"
+# API_KEY = "qWKwd5NQI3fxRu0f64MGGWYa"  # 19997106199
 # SECRET_KEY = "mFuuSlq8L0PTelUQnGSk6bSqOokRoSX3"
 
-API_KEY = "PF9nG704jON3kEoHXKIiSXAP"
-SECRET_KEY = "2CQzAwI28xpgEh2Xlzed06aBzQ2gEgtK"
+# API_KEY = "PF9nG704jON3kEoHXKIiSXAP"  # 17519213264
+# SECRET_KEY = "2CQzAwI28xpgEh2Xlzed06aBzQ2gEgtK"
+
+API_KEY = "GGysNlmR9TrpFEch8YsMN88w"  # Tsuiwen
+SECRET_KEY = "AzFH8dGlUlndIlz3dGUXpShy3dxOYTrw"
 
 school_code = school_name = group_code = group_name = ''
 
@@ -37,7 +42,7 @@ def get_location(data):
         judge = False
         for column in data_df.columns:
 
-            if type(data_df[column][da]) != float and data_df['words0'][da].isdigit():
+            if type(data_df[column][da]) != float and not get_chinese(data_df['words0'][da]):
 
                 judge = True
 
@@ -155,6 +160,7 @@ def get_word_dict(path, len_school_code, len_major_code, len_group_code=None):
 
     last_dict_list = []
     for value in return_dict:
+        value['words'] = re.sub(' ', '', value['words'])
         if len("".join(get_num_letter(value['words'][:len_school_code]))) == len_school_code and \
                 len(value['words']) > len_school_code and get_chinese(value['words'][len_school_code]) and \
                 len("".join(get_chinese(value['words'][len_school_code:]))) > 1:
@@ -182,7 +188,7 @@ def get_word_dict(path, len_school_code, len_major_code, len_group_code=None):
         elif len_group_code and len(
                 "".join(get_num_letter(value['words'][:len_group_code]))) == len_group_code and \
                 len(value['words']) > len_group_code and get_chinese(value['words'][len_group_code]) and \
-                len("".join(get_chinese(value['words'][:len_major_code]))) > 1:
+                len("".join(get_chinese(value['words'][len_group_code:]))) > 1:
 
             temp_row_data1, temp_row_data2 = cut_name_str(value, len_group_code)
 
@@ -304,6 +310,7 @@ def data_arrange(data: pd.DataFrame, location: pd.DataFrame, len_school_code, le
     """
     global school_code, school_name, group_code, group_name
     # 'school_major_code', 'school_major_name', 'select_require', 'edu_year', 'plan_num', 'cost_year'
+    judge = 0  # 1 代表前一个是专业，2 代表前一个是学校
     if len(data.columns) == len(columns) * 2:
 
         left_df = data.iloc[:, :len(columns)]
@@ -323,14 +330,40 @@ def data_arrange(data: pd.DataFrame, location: pd.DataFrame, len_school_code, le
         last_df.columns = columns
         last_location.columns = columns
 
-    else:
-        return pd.DataFrame({'batch_name': [0], 'subject_name': [0], 'school_code': [0], 'school_name': [0],
-                             'major_code': [0], 'major_name': [0], 'select_require': [0], 'edu_year': [0],
-                             'plan_num': [0], 'cost_year': [0]})
+    # elif len(data.columns) + 1 == len(columns) * 2:
+    #
+    #     print(data.count())
 
-    return_df = pd.DataFrame(columns=['batch_name', 'subject_name', 'school_code', 'school_name', 'major_code',
-                                      'major_name', 'select_require', 'edu_year', 'plan_num', 'cost_year'],
-                             index=range(200))
+    elif len(data.columns) - 1 == len(columns) * 2:
+
+        for key, value in dict(data.count()).items():
+
+            if value == min(dict(data.count()).values()):
+                data = data.drop(columns=key)
+                location = location.drop(columns='location{}'.format("".join(get_num(key))))
+                break
+
+        left_df = data.iloc[:, :len(columns)]
+        right_df = data.iloc[:, len(columns):]
+        left_location = location.iloc[:, :len(columns)]
+        right_location = location.iloc[:, len(columns):]
+        left_df.columns = columns
+        right_df.columns = columns
+        left_location.columns = columns
+        right_location.columns = columns
+        last_df = pd.concat([left_df, right_df], ignore_index=True)
+        last_location = pd.concat([left_location, right_location], ignore_index=True)
+
+    else:
+        return pd.DataFrame(
+            {'batch_name': [0], 'subject_name': [0], 'group_code': [0], 'group_name': [0], 'school_code': [0],
+             'school_name': [0], 'major_code': [0], 'major_name': [0], 'select_require': [0], 'edu_year': [0],
+             'plan_num': [0], 'cost_year': [0]})
+
+    return_df = pd.DataFrame(
+        columns=['batch_name', 'subject_name', 'group_code', 'group_name', 'school_code', 'school_name', 'major_code',
+                 'major_name', 'select_require', 'edu_year', 'plan_num', 'cost_year'],
+        index=range(200))
     row_id = 0
     temp_top = 0
 
@@ -348,26 +381,68 @@ def data_arrange(data: pd.DataFrame, location: pd.DataFrame, len_school_code, le
         if type(last_df['school_major_code'][la]) == float:
             if type(last_df['school_major_name'][la]) != float and get_chinese(last_df['school_major_name'][la]):
                 if last_location['school_major_name'][la]['top'] > temp_top:
-                    if type(return_df['major_name'][row_id]) != float:
-                        return_df['major_name'][row_id] += last_df['school_major_name'][la]
+                    if judge == 1:
+                        if type(return_df['major_name'][row_id]) != float:
+                            return_df['major_name'][row_id] += last_df['school_major_name'][la]
+
+                        else:
+                            return_df['major_name'][row_id] = last_df['school_major_name'][la]
+                    elif judge == 2:
+                        school_name += last_df['school_major_name'][la]
+
+                    elif judge == 3:
+
+                        group_name += last_df['school_major_name'][la]
+
+            if 'select_require' in last_df.columns and type(last_df['select_require'][la]) != float \
+                    and type(return_df['select_require'][row_id]) == float:
+                return_df['select_require'][row_id] = last_df['select_require'][la]
+            if 'edu_year' in last_df.columns and type(last_df['edu_year'][la]) != float \
+                    and type(return_df['edu_year'][row_id]) == float:
+                return_df['edu_year'][row_id] = last_df['edu_year'][la]
+            if 'plan_num' in last_df.columns and type(last_df['plan_num'][la]) != float \
+                    and type(return_df['plan_num'][row_id]) == float:
+                return_df['plan_num'][row_id] = last_df['plan_num'][la]
+            if 'cost_year' in last_df.columns and type(last_df['cost_year'][la]) != float \
+                    and type(return_df['cost_year'][row_id]) == float:
+                return_df['cost_year'][row_id] = last_df['cost_year'][la]
+            if 'year_plan_num' in last_df.columns and type(last_df['year_plan_num'][la]) != float \
+                    and type(return_df['edu_year'][row_id]) == float and type(
+                return_df['plan_num'][row_id]) == float:
+                if type(last_df['year_plan_num'][la]) != float:
+                    if last_df['year_plan_num'][la].isdigit():
+                        return_df['edu_year'][row_id] = last_df['year_plan_num'][la][-1:]
+                        return_df['plan_num'][row_id] = last_df['year_plan_num'][la][:-1]
 
                     else:
-                        return_df['major_name'][row_id] = last_df['school_major_name'][la]
+
+                        return_df['edu_year'][row_id] = "".join(get_chinese(last_df['year_plan_num'][la]))
+                        return_df['plan_num'][row_id] = "".join(get_num(last_df['year_plan_num'][la]))
         elif last_location['school_major_code'][la]['top'] > temp_top:
             if len(last_df['school_major_code'][la]) == len_school_code:
 
                 school_code = last_df['school_major_code'][la]
                 school_name = last_df['school_major_name'][la]
+                judge = 2
+
+            elif len(last_df['school_major_code'][la]) == len_group_code:
+
+                group_code = last_df['school_major_code'][la]
+                group_name = last_df['school_major_name'][la]
+                judge = 3
 
             elif len(last_df['school_major_code'][la]) == len_major_code:
 
                 if type(return_df['major_name'][row_id]) != float:
                     row_id += 1
-
+                judge = 1
                 return_df['school_code'][row_id] = school_code
                 return_df['school_name'][row_id] = school_name
                 return_df['major_code'][row_id] = last_df['school_major_code'][la]
                 return_df['major_name'][row_id] = last_df['school_major_name'][la]
+                if len_group_code:
+                    return_df['group_code'][row_id] = group_code
+                    return_df['group_name'][row_id] = group_name
                 if 'select_require' in last_df.columns:
                     return_df['select_require'][row_id] = last_df['select_require'][la]
                 if 'edu_year' in last_df.columns:
@@ -400,16 +475,16 @@ def main(path, len_school_code, len_major_code, columns, len_group_code=None):
     :param len_major_code: 专业名称长度
     :return:
     """
-    word = get_word_dict(path, len_school_code, len_major_code)
+    word = get_word_dict(path, len_school_code, len_major_code, len_group_code=len_group_code)
     last_location, last_df = handle_data(word)
     # right_location, right_df = handle_data(word[2:])
     # 山东省招生计划属性,之后需要自定义功能
     # columns = ['school_major_code', 'school_major_name', 'select_require', 'edu_year', 'plan_num', 'cost_year']
     # columns = ['school_major_code', 'school_major_name', 'select_require', 'year_plan_num', 'cost_year']
 
-    last_df = data_arrange(last_df, last_location, len_school_code, len_major_code, columns)
+    last_df = data_arrange(last_df, last_location, len_school_code, len_major_code, columns, len_group_code=len_group_code)
 
-    # last_df.to_excel(r'{}.xlsx'.format(path[:-4]), index=False)
+    last_df.to_excel(r'{}.xlsx'.format(path[:-4]), index=False)
     # last_location.to_excel(r'{}location.xlsx'.format(path[:-4]), index=False)
     # word[0].to_excel(r'{}df.xlsx'.format(path[:-4]), index=False)
     # word[1].to_excel(r'{}location.xlsx'.format(path[:-4]), index=False)
@@ -431,31 +506,36 @@ def get_file(path):
 
 
 if __name__ == '__main__':
-    input_columns = ['school_major_code', 'school_major_name', 'select_require', 'year_plan_num', 'cost_year']
-    # main(r"E:\OpenCV_Test\hb.jpg", 4, 2, input_columns)
-    school_len = 4
-    major_len = 2
-    path = r'D:\桌面\河北省图片'
-    final_df = pd.DataFrame()
-    for subject_name in get_file(path):
+    # input_columns = ['school_major_code', 'school_major_name', 'select_require', 'year_plan_num', 'cost_year']  # 河北
+    # input_columns = ['school_major_code', 'school_major_name', 'plan_num', 'select_require', 'edu_year', 'cost_year']  # 辽宁
+    # input_columns = ['school_major_code', 'school_major_name', 'cost_year', 'plan_num']  # 吉林
+    input_columns = ['school_major_code', 'school_major_name', 'plan_num', 'edu_year', 'cost_year']
+    main(r"E:\OpenCV_Test\js.jpg", 4, 2, input_columns, len_group_code=6)
+    # school_len = 4
+    # major_len = 2
+    # path = r'D:\桌面\河北省图片'
+    # final_df = pd.DataFrame()
+    # for subject_name in get_file(path):
+    #
+    #     for batch_name in get_file(path + '/' + subject_name):
+    #
+    #         for page in tqdm(get_file(path + '/' + subject_name + '/' + batch_name)):
+    #
+    #             page_path = path + '/' + subject_name + '/' + batch_name + '/' + page
+    #
+    #             df = main(page_path, school_len, major_len, input_columns)
+    #             df['batch_name'] = batch_name
+    #             df['subject_name'] = subject_name
+    #             df['page'] = page[:-4]
+    #             df.to_excel(r'D:\桌面\河北省招生计划Excel\{}_{}.xlsx'.format(subject_name, page), index=False)
+    #             if len(final_df) == 0:
+    #
+    #                 final_df = df
+    #
+    #             else:
+    #
+    #                 final_df = pd.concat([df, final_df], ignore_index=True)
+    #
+    # final_df.to_excel(r'D:\桌面\河北省图片\河北省招生计划.xlsx', index=False)
 
-        for batch_name in get_file(path + '/' + subject_name):
-
-            for page in tqdm(get_file(path + '/' + subject_name + '/' + batch_name)):
-
-                page_path = path + '/' + subject_name + '/' + batch_name + '/' + page
-
-                df = main(page_path, school_len, major_len, input_columns)
-                df['batch_name'] = batch_name
-                df['subject_name'] = subject_name
-                df['page'] = page[:-4]
-                df.to_excel(r'D:\桌面\河北省招生计划Excel\{}_{}.xlsx'.format(subject_name, page), index=False)
-                if len(final_df) == 0:
-
-                    final_df = df
-
-                else:
-
-                    final_df = pd.concat([df, final_df], ignore_index=True)
-
-    final_df.to_excel(r'D:\桌面\河北省图片\河北省招生计划.xlsx', index=False)
+    # 需要调整学校名称和专业名称的添加字段的条件
