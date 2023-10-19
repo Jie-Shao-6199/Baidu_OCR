@@ -1,3 +1,6 @@
+"""
+福建省历年分数识别，识别图片像素要在4096以下
+"""
 import base64
 import json
 import urllib
