@@ -1,6 +1,6 @@
 """
 被分成两页的，OCR识别程序
-适用于：吉林，山东，辽宁，河北，江苏
+适用于：吉林，山东，辽宁，河北，江苏，浙江
 """
 import base64
 import json
@@ -388,7 +388,10 @@ def data_arrange(data: pd.DataFrame, location: pd.DataFrame, len_school_code, le
                         else:
                             return_df['major_name'][row_id] = last_df['school_major_name'][la]
                     elif judge == 2:
-                        school_name += last_df['school_major_name'][la]
+                        if type(school_name) == float:
+                            school_name = last_df['school_major_name'][la]
+                        else:
+                            school_name += last_df['school_major_name'][la]
 
                     elif judge == 3:
 
@@ -418,7 +421,7 @@ def data_arrange(data: pd.DataFrame, location: pd.DataFrame, len_school_code, le
 
                         return_df['edu_year'][row_id] = "".join(get_chinese(last_df['year_plan_num'][la]))
                         return_df['plan_num'][row_id] = "".join(get_num(last_df['year_plan_num'][la]))
-        elif last_location['school_major_code'][la]['top'] > temp_top:
+        elif last_location['school_major_code'][la]['top'] > temp_top and last_df['school_major_code'][la].isdigit():  # 不清楚需不需要改成get_num_letter
             if len(last_df['school_major_code'][la]) == len_school_code:
 
                 school_code = last_df['school_major_code'][la]
@@ -461,7 +464,7 @@ def data_arrange(data: pd.DataFrame, location: pd.DataFrame, len_school_code, le
 
                             return_df['edu_year'][row_id] = "".join(get_chinese(last_df['year_plan_num'][la]))
                             return_df['plan_num'][row_id] = "".join(get_num(last_df['year_plan_num'][la]))
-
+    print(return_df)
     return return_df[:row_id + 1]
 
 
@@ -484,7 +487,7 @@ def main(path, len_school_code, len_major_code, columns, len_group_code=None):
 
     last_df = data_arrange(last_df, last_location, len_school_code, len_major_code, columns, len_group_code=len_group_code)
 
-    last_df.to_excel(r'{}.xlsx'.format(path[:-4]), index=False)
+    # last_df.to_excel(r'{}.xlsx'.format(path[:-4]), index=False)
     # last_location.to_excel(r'{}location.xlsx'.format(path[:-4]), index=False)
     # word[0].to_excel(r'{}df.xlsx'.format(path[:-4]), index=False)
     # word[1].to_excel(r'{}location.xlsx'.format(path[:-4]), index=False)
@@ -509,11 +512,12 @@ if __name__ == '__main__':
     # input_columns = ['school_major_code', 'school_major_name', 'select_require', 'year_plan_num', 'cost_year']  # 河北
     # input_columns = ['school_major_code', 'school_major_name', 'plan_num', 'select_require', 'edu_year', 'cost_year']  # 辽宁
     # input_columns = ['school_major_code', 'school_major_name', 'cost_year', 'plan_num']  # 吉林
-    input_columns = ['school_major_code', 'school_major_name', 'plan_num', 'edu_year', 'cost_year']
-    main(r"E:\OpenCV_Test\js.jpg", 4, 2, input_columns, len_group_code=6)
+    # input_columns = ['school_major_code', 'school_major_name', 'plan_num', 'edu_year', 'cost_year']  # 江苏
+    input_columns = ['school_major_code', 'school_major_name', 'select_require', 'plan_num', 'edu_year', 'cost_year']  # 浙江
+    main(r"E:\OpenCV_Test\zj.jpg", 4, 3, input_columns)
     # school_len = 4
     # major_len = 2
-    # path = r'D:\桌面\河北省图片'
+    # path = r'D:\桌面\辽宁省图片'
     # final_df = pd.DataFrame()
     # for subject_name in get_file(path):
     #
@@ -527,15 +531,15 @@ if __name__ == '__main__':
     #             df['batch_name'] = batch_name
     #             df['subject_name'] = subject_name
     #             df['page'] = page[:-4]
-    #             df.to_excel(r'D:\桌面\河北省招生计划Excel\{}_{}.xlsx'.format(subject_name, page), index=False)
+    #             df.to_excel(r'D:\桌面\辽宁省招生计划Excel\{}_{}.xlsx'.format(subject_name, page), index=False)
     #             if len(final_df) == 0:
     #
     #                 final_df = df
     #
     #             else:
     #
-    #                 final_df = pd.concat([df, final_df], ignore_index=True)
+    #                 final_df = pd.concat([final_df, df], ignore_index=True)
     #
-    # final_df.to_excel(r'D:\桌面\河北省图片\河北省招生计划.xlsx', index=False)
+    # final_df.to_excel(r'D:\桌面\辽宁省图片\辽宁省招生计划.xlsx', index=False)
 
     # 需要调整学校名称和专业名称的添加字段的条件
