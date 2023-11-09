@@ -131,6 +131,7 @@ def handle_data(temp_list: list, len_school_code, len_major_code, columns: list,
     :param temp_list: 需要处理的每一行数据列表
     :return:
     """
+    
     global school_code, school_name, group_code, group_name, subject_name
     last_dict = []
     for li in temp_list:

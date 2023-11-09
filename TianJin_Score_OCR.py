@@ -14,11 +14,11 @@ import requests
 from txdpy import is_num, is_chinese, is_num_letter, get_num, get_chinese
 
 # 本月无法继续访问
-API_KEY = "GGysNlmR9TrpFEch8YsMN88w"
-SECRET_KEY = "AzFH8dGlUlndIlz3dGUXpShy3dxOYTrw"
+# API_KEY = "GGysNlmR9TrpFEch8YsMN88w"
+# SECRET_KEY = "AzFH8dGlUlndIlz3dGUXpShy3dxOYTrw"
 
-# API_KEY = "PF9nG704jON3kEoHXKIiSXAP"  # 17519213264
-# SECRET_KEY = "2CQzAwI28xpgEh2Xlzed06aBzQ2gEgtK"
+API_KEY = "PF9nG704jON3kEoHXKIiSXAP"  # 17519213264
+SECRET_KEY = "2CQzAwI28xpgEh2Xlzed06aBzQ2gEgtK"
 
 # API_KEY = "qWKwd5NQI3fxRu0f64MGGWYa"  # 19997106199
 # SECRET_KEY = "mFuuSlq8L0PTelUQnGSk6bSqOokRoSX3"
@@ -45,7 +45,7 @@ def main(path):
 
     response = requests.request("POST", url, headers=headers, data=payload)
 
-    print(response.json())
+    # print(response.json())
     get_bytes = response.json()['excel_file'].encode('utf-8')
     decoded_data = base64.b64decode(get_bytes)
     df = pd.read_excel(decoded_data, header=None)
@@ -88,7 +88,7 @@ def handle_data(data: pd.DataFrame):
                 temp_str = data['school_major_name'][num].split("\n")
                 temp_group_name = temp_str[0]
                 i = 1
-                while temp_group_name[-2:] != '组)':
+                while '组' not in temp_group_name:
 
                     temp_group_name += temp_str[i]
                     i += 1
@@ -99,7 +99,7 @@ def handle_data(data: pd.DataFrame):
             else:
                 if type(return_df['major_name'][row_id]) != float:
                     row_id += 1
-                if data.isna().at[num, 'avg_score'] or get_chinese(data['avg_score'][num]):
+                if data.isna().at[num, 'avg_score'] or get_chinese(data['avg_score'].astype(str)[num]):
                     pass
                 else:
                     return_df['school_name'][row_id] = school_name
@@ -109,11 +109,17 @@ def handle_data(data: pd.DataFrame):
                     return_df['avg_score'][row_id] = data['avg_score'][num]
                     return_df['min_score'][row_id] = data['min_score_rank'][num].split("\n")[0]
                     return_df['min_rank'][row_id] = data['min_score_rank'][num].split("\n")[1]
-    return return_df[:row_id]
+    return_df = return_df.sort_values(by='group_code', ignore_index=True)
+    if return_df.notna().at[row_id, 'school_name']:
+        school_name = return_df['school_name'][row_id]
+        group_code = return_df['group_code'][row_id]
+        return return_df[:row_id + 1]
+    else:
+        return return_df[:row_id]
 
 
 if __name__ == '__main__':
-    path = r"D:\桌面\天津分数图片"
+    path = r"D:\桌面\OCR检验\天津分数图片"
     df = pd.DataFrame()
     for subject_name in get_file(path):
 
@@ -127,6 +133,6 @@ if __name__ == '__main__':
                 last_df['subject_name'] = subject_name
                 last_df['batch_name'] = batch_name
                 df = pd.concat([df, last_df])
-                last_df.to_excel(r"D:\桌面\天津分数Excel\{}.xlsx".format(page), index=False)
+                last_df.to_excel(r"D:\桌面\OCR检验\天津分数Excel\{}.xlsx".format(page), index=False)
 
-    df.to_excel(r"D:\桌面\天津2023年招生计划（本科批）.xlsx", index=False)
+    df.to_excel(r"D:\桌面\OCR检验\天津2023年招生计划（本科批）.xlsx", index=False)
